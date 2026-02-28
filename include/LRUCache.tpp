@@ -14,10 +14,11 @@ V LRUCache<K, V>::get(const K& key) {
     if (it == cacheMap.end())
         throw std::runtime_error("Not found");
 
-    // move key to front
-    lruList.remove(key);
+    // move key to front in O(1)
+    lruList.erase(it->second.second);
     lruList.push_front(key);
-    return it->second;
+    it->second.second = lruList.begin();
+    return it->second.first;
 }
 
 // --- put ---
@@ -26,14 +27,12 @@ template<typename K, typename V>
 void LRUCache<K, V>::put(const K& key, const V& value) {
     std::lock_guard<std::mutex> lock(mtx);
     auto it = cacheMap.find(key);
-    if (it != cacheMap.end())
-        lruList.remove(key);
-
-    if (cacheMap.size() >= capacity) {
-        auto old = lruList.back();
+    if (it != cacheMap.end()) {
+        lruList.erase(it->second.second);
+    } else if (cacheMap.size() >= capacity) {
+        cacheMap.erase(lruList.back());
         lruList.pop_back();
-        cacheMap.erase(old);
     }
-    cacheMap[key] = value;
     lruList.push_front(key);
+    cacheMap[key] = {value, lruList.begin()};
 }

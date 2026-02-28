@@ -8,7 +8,8 @@
 
 template<typename K, typename V>
 class LRUCache {
-    std::unordered_map<K, V> cacheMap;
+    using ListIterator = typename std::list<K>::iterator;
+    std::unordered_map<K, std::pair<V, ListIterator>> cacheMap;
     std::list<K> lruList;
     std::mutex mtx;
     size_t capacity;
