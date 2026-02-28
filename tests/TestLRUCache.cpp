@@ -128,3 +128,74 @@ TEST(LRUCacheTest, StringKeys) {
     EXPECT_THROW(cache.get("beta"), std::runtime_error);
     EXPECT_EQ(cache.get("gamma"), 3);
 }
+
+// =============================================
+// ShardedLRUCache Tests
+// =============================================
+
+// --- Basic Operations ---
+
+TEST(ShardedLRUCacheTest, PutAndGet) {
+    ShardedLRUCache<int, std::string> cache(32, 4);
+    cache.put(1, "one");
+    cache.put(2, "two");
+    EXPECT_EQ(cache.get(1), "one");
+    EXPECT_EQ(cache.get(2), "two");
+}
+
+TEST(ShardedLRUCacheTest, GetMissingKeyThrows) {
+    ShardedLRUCache<int, int> cache(16, 4);
+    EXPECT_THROW(cache.get(42), std::runtime_error);
+}
+
+TEST(ShardedLRUCacheTest, OverwriteExistingKey) {
+    ShardedLRUCache<int, std::string> cache(16, 4);
+    cache.put(1, "old");
+    cache.put(1, "new");
+    EXPECT_EQ(cache.get(1), "new");
+}
+
+// --- Thread Safety (the whole point) ---
+
+TEST(ShardedLRUCacheTest, ConcurrentPuts) {
+    ShardedLRUCache<int, int> cache(1000, 16);
+    std::vector<std::thread> threads;
+
+    for (int t = 0; t < 8; ++t) {
+        threads.emplace_back([&cache, t]() {
+            for (int i = t * 100; i < (t + 1) * 100; ++i) {
+                cache.put(i, i * 10);
+            }
+        });
+    }
+    for (auto& th : threads) th.join();
+
+    for (int i = 0; i < 800; ++i) {
+        EXPECT_EQ(cache.get(i), i * 10);
+    }
+}
+
+TEST(ShardedLRUCacheTest, ConcurrentGetAndPut) {
+    ShardedLRUCache<int, int> cache(200, 8);
+    for (int i = 0; i < 50; ++i)
+        cache.put(i, i);
+
+    std::vector<std::thread> threads;
+    for (int t = 0; t < 8; ++t) {
+        threads.emplace_back([&cache, t]() {
+            for (int i = 1; i <= 200; ++i) {
+                cache.put(t * 1000 + i, i);
+                try { cache.get(t * 1000 + i); } catch (...) {}
+            }
+        });
+    }
+    for (auto& th : threads) th.join();
+}
+
+TEST(ShardedLRUCacheTest, StringKeys) {
+    ShardedLRUCache<std::string, int> cache(16, 4);
+    cache.put("alpha", 1);
+    cache.put("beta", 2);
+    EXPECT_EQ(cache.get("alpha"), 1);
+    EXPECT_EQ(cache.get("beta"), 2);
+}
