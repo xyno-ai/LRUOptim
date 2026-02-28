@@ -25,6 +25,10 @@ V LRUCache<K, V>::get(const K& key) {
 template<typename K, typename V>
 void LRUCache<K, V>::put(const K& key, const V& value) {
     std::lock_guard<std::mutex> lock(mtx);
+    auto it = cacheMap.find(key);
+    if (it != cacheMap.end())
+        lruList.remove(key);
+
     if (cacheMap.size() >= capacity) {
         auto old = lruList.back();
         lruList.pop_back();
