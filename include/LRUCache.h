@@ -1,14 +1,14 @@
 #pragma once
 
 #include <iostream>
-#include <map>
+#include <unordered_map>
 #include <list>
 #include <mutex>
 #include <stdexcept>
 
 template<typename K, typename V>
 class LRUCache {
-    std::map<K, V> cacheMap;
+    std::unordered_map<K, V> cacheMap;
     std::list<K> lruList;
     std::mutex mtx;
     size_t capacity;
