@@ -1,5 +1,7 @@
 # LRUOptim
 
+[![CI](https://github.com/yferc/LRUOptim/actions/workflows/ci.yml/badge.svg)](https://github.com/yferc/LRUOptim/actions/workflows/ci.yml)
+
 A fast, thread-safe LRU cache in C++.
 
 ## What's in here
